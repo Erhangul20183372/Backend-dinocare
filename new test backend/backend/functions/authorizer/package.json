@@ -1,0 +1,25 @@
+{
+  "name": "@functions/authorizer",
+  "version": "0.1.0",
+  "private": false,
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "dev": "tsx watch src/entrypoints/local.ts",
+    "build": "tsc -b",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc -b",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}

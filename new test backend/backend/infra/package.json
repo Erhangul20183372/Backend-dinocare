@@ -1,0 +1,10 @@
+{
+  "name": "infra",
+  "private": true,
+  "scripts": {
+    "prep:env": "node scripts/generate-env-json.mjs",
+    "prep:shared": "cd ../ && pnpm build && cd infra && node scripts/prep-shared.mjs",
+    "sam:build": "pnpm run prep:shared && sam build -t template.yaml",
+    "sam:start": "pnpm prep:env && sam local start-api --env-vars env.json -t .aws-sam/build/template.yaml --port 8002 --warm-containers EAGER --host 0.0.0.0 --add-host host.docker.internal:host-gateway"
+  }
+}

@@ -1,0 +1,240 @@
+@startuml ERD_RDS
+
+!define Table(name) class name << (T,#90ee90) >>
+!define LookUp(name) class name << (L,#50ee90) >>
+!define Enum(name) class name << (E,#10ee90) >>
+
+Table(organization){
+  + id: UUID <<PK>>
+  --
+  + domain: TEXT <<UQ, NOT NULL>>
+  + name: TEXT <<NOT NULL>>
+  + logo_url: TEXT <<NULL>>
+  + archived_on: TIMESTAMPTZ <<NULL>>
+  + archived_by: UUID <<NULL>>
+}
+
+Table(app_user_organization_membership){
+  + organization_id: UUID <<PK, FK>>
+  + app_user_id: UUID <<PK, FK>>
+  + member_since: TIMESTAMPTZ <<PK>>
+  --
+  + role: role <<NOT NULL>>
+  + member_until: TIMESTAMPTZ <<NULL>>
+  + invited_by: UUID <<NOT NULL>>
+  + archived_on: TIMESTAMPTZ <<NULL>>
+  + archived_by: UUID <<NULL>>
+}
+
+' ^constraints:
+' - member_since cannot be in the future
+' - member_until must be null or greater than member_since
+' - role must be organization_admin or organization_member
+
+Table(team){
+  + id: UUID <<PK>>
+  --
+  + organization_id: UUID <<FK, UQ, NOT NULL>>
+  --
+  + name: TEXT <<UQ, NOT NULL>>
+  + color: TEXT <<NOT NULL>>
+  + archived_on: TIMESTAMPTZ <<NULL>>
+  + archived_by: UUID <<NULL>>
+}
+
+' ^constraints:
+' - color must be a valid hex color code
+
+Table(app_user_team_membership){
+  + app_user_id: UUID <<PK, FK>>
+  + team_id: UUID <<PK, FK>>
+  + member_since: TIMESTAMPTZ <<PK>>
+  --
+  + role: role <<NOT NULL>>
+  + member_until: TIMESTAMPTZ <<NULL>>
+  + invited_by: UUID <<NOT NULL>>
+  + archived_on: TIMESTAMPTZ <<NULL>>
+  + archived_by: UUID <<NULL>>
+}
+
+' ^constraints:
+' - member_since cannot be in the future
+' - member_until must be null or greater than member_since
+' - role must be team_admin or team_member
+
+Table(app_user_root_membership){
+  + app_user_id: UUID <<PK, FK>>
+  + member_since: TIMESTAMPTZ <<PK>>
+  --
+  + role: role <<NOT NULL>>
+  + member_until: TIMESTAMPTZ <<NULL>>
+  + invited_by: UUID <<NULL>>
+  + archived_on: TIMESTAMPTZ <<NULL>>
+  + archived_by: UUID <<NULL>>
+}
+
+' ^constraints:
+' - member_since cannot be in the future
+' - member_until must be null or greater than member_since
+' - role must be app_admin or app_member
+
+note right of team
+  Combination of 
+  organization_id and team_name 
+  is unique.
+end note
+
+Table(app_user) {
+  + id: UUID <<PK>>
+  --
+  + identity_id: UUID <<FK, UQ, NOT NULL>>
+  --
+  + first_name: TEXT <<NOT NULL>>
+  + last_name: TEXT <<NOT NULL>>
+  + archived_on: TIMESTAMPTZ <<NULL>>
+  + archived_by: UUID <<NULL>>
+}
+
+Table(identity) {
+  + id: UUID <<PK>>
+  --
+  + email_address: TEXT <<UQ, NOT NULL>>
+  + password_hash: TEXT <<NOT NULL>>
+}
+
+Table(client) {
+  + id: UUID <<PK>>
+  --
+  + team_id: UUID <<FK>>
+  --
+  + gender: gender <<NOT NULL>>
+  + first_name: TEXT <<NOT NULL>>
+  + last_name: TEXT <<NOT NULL>>
+  + archived_on: TIMESTAMPTZ <<NULL>>
+  + archived_by: UUID <<NULL>>
+}
+
+Table(app_user_client_membership){
+  + app_user_id: UUID <<PK, FK>>
+  + client_id: UUID <<PK, FK>>
+  + member_since: TIMESTAMPTZ <<PK>>
+  --
+  + role: role <<NOT NULL>>
+  + member_until: TIMESTAMPTZ <<NULL>>
+  + invited_by: UUID <<NOT NULL>>
+  + archived_on: TIMESTAMPTZ <<NULL>>
+  + archived_by: UUID <<NULL>>
+}
+
+' ^constraints:
+' - member_since cannot be in the future
+' - member_until must be null or greater than member_since
+' - role must be client_member
+
+Enum(gender) {
+  + male
+  + female
+  + other
+}
+
+Table(device) {
+  + id: UUID <<PK>>
+  --
+  + sticker_id: TEXT <<UQ, NOT NULL>>
+  + serial_number: TEXT <<UQ, NOT NULL>>
+  + device_type_id: UUID <<FK, NOT NULL>>
+  --
+  ' + is_edge: BOOLEAN <<NOT NULL>>
+  + status: device_status <<NOT NULL>>
+}
+
+LookUp(device_type) {
+  + id: UUID <<PK>>
+  --
+  + name: TEXT <<UQ, NOT NULL>>
+  ' category: TEXT <<NOT NULL>> 
+}
+
+Enum(device_status) {
+  + active
+  + inactive
+  + retired
+  + in_repair
+}
+
+Table(client_device_assignment) {
+  + client_id: UUID <<PK, FK>>
+  + device_id: UUID <<PK, FK>>
+  + assigned_since: TIMESTAMPTZ <<PK>>
+  --
+  + assigned_until: TIMESTAMPTZ <<NULL>>
+  + assigned_by: UUID <<NOT NULL>>
+  + device_location: TEXT <<NULL>>
+  + unassigned_by: UUID <<NULL>>
+}
+
+' ^constraints:
+' - assigned_since cannot be in the future
+' - assigned_until must be null or greater than assigned_since
+' - assigned_until must be set when unassigned_by is set and vice versa
+' - when creating, if device_id is already assigned, then assigned_until must be later than the new assigned_since
+
+note top of client_device_assignment
+  Add contraint to check if assigned_until 
+  is null or assigned_until is greater or
+  equal then assigned_since
+  
+  Also add constraint to check if assigned_until
+  is not null when inserting new row for device_id
+
+  Idem for membership tables.
+end note
+
+Enum(role) {
+  + app_admin
+  + app_member
+  + client_admin
+  + client_member
+  + team_admin
+  + team_member
+  + organization_admin
+  + organization_member
+}
+
+
+organization ||-down-o{ app_user_organization_membership
+
+organization ||-up-o{ team
+team        ||-down-o{ app_user_team_membership
+team        ||-down-o{ client
+
+client      ||-down-o{ app_user_client_membership
+client      }o-right-|| gender
+client      ||-down-o{ client_device_assignment
+
+app_user    ||-up-o{ app_user_client_membership       : role
+app_user    ||-up-o{ app_user_organization_membership : role
+app_user    ||-up-o{ app_user_team_membership         : role
+app_user    ||-up-o{ app_user_root_membership         : role
+
+app_user    ||-down-|| identity
+
+device      }o-down-|| device_status
+device      }o-down-|| device_type
+device      ||-up-o{ client_device_assignment
+
+role        ||-down-o{ app_user_team_membership
+role        ||-down-o{ app_user_client_membership
+role        ||-down-o{ app_user_organization_membership
+role        ||-down-o{ app_user_root_membership
+
+legend top right
+    == Legend ==
+    PK = Primary Key  
+    FK = Foreign Key 
+    UQ = Unique Key
+    NULL = Field can be null
+    NOT NULL = Field must have a value
+endlegend
+
+@enduml

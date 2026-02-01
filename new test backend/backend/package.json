@@ -1,0 +1,46 @@
+{
+  "name": "backend",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "pnpm": {
+    "overrides": {
+      "@shared/ts": "workspace:*"
+    },
+    "ignoredBuiltDependencies": [
+      "bcrypt",
+      "esbuild"
+    ]
+  },
+  "scripts": {
+    "dev": "turbo dev --parallel",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "lint": "eslint --fix .",
+    "format": "prettier --write .",
+    "test": "turbo test",
+    "clean": "turbo clean",
+    "sam:build": "pnpm --filter infra run sam:build",
+    "sam:start": "pnpm --filter infra run sam:start",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.2"
+  },
+  "lint-staged": {
+    "{functions,packages}/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}

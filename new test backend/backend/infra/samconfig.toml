@@ -1,0 +1,11 @@
+version = 0.1
+
+[default.build.parameters]
+parallel = true
+template = "template.yaml"
+
+[default.local_start_api.parameters]
+template = "template.yaml"
+warm_containers = "EAGER"
+watch = true
+port = 3000

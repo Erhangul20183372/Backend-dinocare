@@ -1,0 +1,88 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!include <C4/C4_Container>
+
+title C4 - Container Diagram for Our Platform
+
+' Users
+Person(caregiver, "Care Giver", "Uses dashboard and mobile app to manage sensors and clients")
+Person(client, "Client", "Receives healthcare services")
+
+System_Boundary(system, "Our Platform") {
+
+  Container(webapp, "Dashboard (Web App)", "React", "Used by caregivers for administration and monitoring")
+  Container(mobileapp, "Sensor App (Mobile)", "React Native", "Used by caregivers to connect sensors")
+  Container(apigw, "API Gateway", "AWS API Gateway", "Public entrypoint to APIs")
+
+  ContainerQueue(eventbus, "Event Bus", "AWS SNS / SQS", "Decouples Core API and Analytics API")
+
+  Container_Boundary(core, "Core"){
+    Container(coreapi, "Core API", "Node.js/Spring Boot", "Authentication, user management, organization management, sensor management")
+
+    ContainerDb(coredb, "Database", "MongoDB 8.0", "Stores users, organizations, and sensor metadata")
+  }
+
+  Container_Boundary(analytics, "Analytics"){
+    Container(analyticsapi, "Analytics API", "Python/FastAPI", "Processes and analyzes sensor data, provides results")
+
+    ContainerQueue(redis, "Queue", "Redis", "Presistent task queue")
+    Container(workers, "Workers", "Celery Worker (Python)", "Background tasks for heavy data processing")
+    Container(scheduler, "Scheduler", "Celery Beat", "Schedules recurring analytics tasks")
+
+    ContainerDb(analyticsdb, "Database", "MongoDB 8.0", "Stores users, organizations, and processed sensor data")
+  }
+
+  ContainerDb(sensordb, "Sensor Database", "InfluxDB v3", "Stores raw sensor data")
+}
+
+' External systems
+System_Ext(sensors, "Home Sensors", "Send health data from client homes")
+System_Ext(emqx, "EMQX", "MQTT Broker Service", "Managed service for ingesting sensor data")
+System_Ext(push, "Push Notification Service", "Sends mobile push notifications")
+System_Ext(email, "AWS SES", "Sends transactional emails")
+System_Ext(s3storage, "AWS S3", "Bootstrap storage for .env used to connect to Bitwarden")
+System_Ext(secrets, "Bitwarden", "Provides secrets and credentials securely")
+
+' Relationships
+Rel(caregiver, webapp, "Uses")
+Rel(caregiver, mobileapp, "Uses")
+Rel(client, sensors, "Owns / uses at home")
+
+Rel(webapp, apigw, "Calls APIs")
+Rel(mobileapp, apigw, "Calls APIs")
+
+Rel(apigw, coreapi, "Routes requests to")
+Rel(apigw, analyticsapi, "Routes requests to")
+
+Rel(coreapi, eventbus, "Publishes events to")
+Rel(analyticsapi, eventbus, "Subscribes to events from")
+
+Rel(analyticsapi, analyticsdb, "Reads/writes")
+Rel(analyticsapi, sensordb, "Reads")
+Rel(coreapi, sensordb, "Writes")
+Rel(coreapi, coredb, "Reads/writes")
+
+Rel(sensors, emqx, "Publishes data via MQTT")
+Rel_R(emqx, coreapi, "Streams sensor data to")
+
+Rel(analyticsapi, redis, "Publishes events")
+Rel(scheduler, redis, "Publishes scheduled tasks")
+Rel_L(workers, redis, "Consumes events")
+
+Lay_D(sensordb, eventbus)
+Lay_L(analytics, core)
+Lay_R(core, eventbus)
+Lay_R(core, sensordb)
+
+note bottom of secrets
+  In production, Bitwarden is used to manage and provide secrets securely to services.
+  In development, .env files are used to provide necessary configuration and secrets.
+end note
+
+note bottom of s3storage
+  In production, AWS S3 is used to store bootstrap .env files for services to fetch necessary configuration and secrets.
+  In development, .env files are used to provide necessary configuration and secrets.
+end note
+
+SHOW_LEGEND()
+@enduml

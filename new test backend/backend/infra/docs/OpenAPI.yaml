@@ -1,0 +1,1477 @@
+openapi: 3.0.3
+info:
+  title: Dino Care API
+  description: >
+    Dino Care API specification for the serverless backend.
+    Documents authentication, organization management, team administration,
+    client records, device handling, and time-series measurements.
+    Designed for the Dino Care frontend and partner integrations.
+  version: 1.0.0
+servers:
+  - url: https://api.dinocare.nl/v1
+
+paths:
+  # ====== AUTH ======
+  /auth/login:
+    post:
+      summary: Log in with email and password
+      description: >
+        Authenticate a user by providing their email and password.
+        Returns both an access token (short-lived) and a refresh token (long-lived).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: >
+        Create a new application user by providing identity and contact details.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, firstName, lastName]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                firstName: { type: string }
+                lastName: { type: string }
+                organizationId: { type: string }
+                role: { type: string }
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppUserWithOrg" }
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      description: >
+        Exchange a valid refresh token for a new access token.
+        Use this to keep a session active without requiring the user to log in again.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "200":
+          description: New access token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken: { type: string }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/logout:
+    post:
+      summary: Invalidate refresh token
+      description: >
+        Log out by invalidating the provided refresh token.
+        After this call, the token can no longer be used to request new access tokens.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "204":
+          description: Logged out
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ====== ME ======
+  /me:
+    get:
+      summary: Get current user profile
+      description: >
+        Retrieve profile details of the authenticated user,
+        including their organization membership and role.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile information
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppUserWithOrg" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ====== ORGANIZATIONS ======
+  /organizations:
+    get:
+      summary: List organizations
+      description: >
+        Retrieve all organizations. Supports pagination with `limit` and `offset`.
+      security: []
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedOrganizations" }
+    post:
+      summary: Create a new organization
+      description: >
+        Register a new organization with a domain, name, and optional logo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrganizationCreate" }
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Organization created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Organization" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{organizationId}:
+    parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema: { type: string }
+    get:
+      summary: Get organization details
+      description: >
+        Retrieve details for a single organization by its ID.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Organization" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update organization (partial)
+      description: >
+        Partially update organization fields such as domain, name, or logo.
+        Only the provided fields will be updated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrganizationUpdate" }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Organization updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      summary: Delete organization
+      description: >
+        Permanently delete an organization by its ID.
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{organizationId}/members:
+    parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema: { type: string }
+    get:
+      summary: List members of an organization
+      description: >
+        Retrieve all users belonging to a given organization. Supports pagination.
+      parameters:
+        - in: query
+          name: role
+          schema: { type: string }
+          description: Filter members by role
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedAppUsers" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      summary: Add user to organization
+      description: >
+        Assign a user to the organization with a given role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, role]
+              properties:
+                userId: { type: string }
+                role: { type: string }
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: User added to organization
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    patch:
+      summary: Update organization membership
+      description: >
+        Update the role or membership period for an existing organization member.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrganizationMembershipUpdate" }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Organization membership updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppUserMembership" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      summary: Remove user from organization
+      description: >
+        Remove a user from the organization by specifying their `userId`.
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema: { type: string }
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: User removed from organization
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{organizationId}/teams:
+    parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema: { type: string }
+    get:
+      summary: List teams within an organization
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Case-insensitive search over team name and color labels
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedTeams" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{organizationId}/clients:
+    parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema: { type: string }
+    get:
+      summary: List clients within an organization
+      parameters:
+        - in: query
+          name: teamId
+          schema: { type: string }
+          description: Filter by team ID
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Case-insensitive search across client name and email
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedClients" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ====== USERS ======
+  /users:
+    get:
+      summary: List users
+      description: >
+        Retrieve all users in the system.
+        Optionally filter by `organizationId`. Supports pagination with `limit` and `offset`.
+      parameters:
+        - in: query
+          name: organizationId
+          required: false
+          schema: { type: string }
+          description: Filter users by organization ID
+        - in: query
+          name: role
+          required: false
+          schema: { type: string }
+          description: Filter by organization role or system role key
+        - in: query
+          name: search
+          required: false
+          schema: { type: string }
+          description: Case-insensitive search across first name, last name, and email
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedAppUsers" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /users/bulk:
+    post:
+      summary: Bulk create users
+      description: >
+        Onboard multiple users in a single request. Duplicate emails are ignored and reported.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserBulkCreateRequest" }
+      security:
+        - bearerAuth: []
+      responses:
+        "202":
+          description: Bulk user onboarding accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BulkOperationResult" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ====== TEAMS ======
+  /teams:
+    get:
+      summary: List teams
+      description: >
+        Retrieve all teams.
+        Optionally filter by `organizationId`. Supports pagination with `limit` and `offset`.
+      parameters:
+        - in: query
+          name: organizationId
+          required: false
+          schema: { type: string }
+          description: Filter teams by organization ID
+        - in: query
+          name: search
+          required: false
+          schema: { type: string }
+          description: Case-insensitive search over team name and color labels
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedTeams" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create a new team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Team" }
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Team created successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Team" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /teams/bulk:
+    post:
+      summary: Bulk create teams
+      description: >
+        Create multiple teams within one request. Duplicate names within the same organization are skipped and reported.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeamBulkCreateRequest" }
+      security:
+        - bearerAuth: []
+      responses:
+        "202":
+          description: Bulk team creation accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BulkOperationResult" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /teams/{teamId}:
+    parameters:
+      - in: path
+        name: teamId
+        required: true
+        schema: { type: string }
+    get:
+      summary: Get team details
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Team" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update team (partial)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeamUpdate" }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Team updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      summary: Delete team
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Team deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /teams/{teamId}/members:
+    parameters:
+      - in: path
+        name: teamId
+        required: true
+        schema: { type: string }
+    get:
+      summary: List users in a team
+      parameters:
+        - in: query
+          name: role
+          schema: { type: string }
+          description: Filter members by team role
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedAppUsers" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      summary: Add user to a team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, role]
+              properties:
+                userId: { type: string }
+                role: { type: string }
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: User added to team
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    patch:
+      summary: Update team membership
+      description: >
+        Update the role or membership period for an existing team member.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeamMembershipUpdate" }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Team membership updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppUserMembership" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      summary: Remove user from a team
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema: { type: string }
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: User removed from team
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /teams/{teamId}/clients:
+    parameters:
+      - in: path
+        name: teamId
+        required: true
+        schema: { type: string }
+    get:
+      summary: List clients in a team
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Case-insensitive search across client name and email
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedClients" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ====== CLIENTS ======
+  /clients:
+    get:
+      summary: List clients (admin or org admin)
+      parameters:
+        - in: query
+          name: organizationId
+          schema: { type: string }
+          description: Filter clients by organization ID
+        - in: query
+          name: teamId
+          schema: { type: string }
+          description: Filter clients by team ID
+        - in: query
+          name: status
+          schema: { type: string, enum: [active, inactive] }
+          description: Filter clients by active status
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Case-insensitive search over first name, last name, and email
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedClients" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create a new client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientCreate" }
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Client created successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Client" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /clients/bulk:
+    post:
+      summary: Bulk create clients
+      description: >
+        Onboard multiple clients in a single request.
+        Duplicate identifiers or emails are skipped and returned in the result payload.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientBulkCreateRequest" }
+      security:
+        - bearerAuth: []
+      responses:
+        "202":
+          description: Bulk client onboarding accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BulkOperationResult" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /clients/{clientId}:
+    parameters:
+      - in: path
+        name: clientId
+        required: true
+        schema: { type: string }
+    get:
+      summary: Get client details
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Client" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update client (partial)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClientUpdate" }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Client updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      summary: Delete client
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Client deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /clients/{clientId}/devices:
+    parameters:
+      - in: path
+        name: clientId
+        required: true
+        schema: { type: string }
+    get:
+      summary: List devices for a client
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedDevices" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      summary: Link device to client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceId]
+              properties:
+                deviceId: { type: string }
+                location: { type: string }
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Device linked to client
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    patch:
+      summary: Unlink device from client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceId]
+              properties:
+                deviceId: { type: string }
+                location: { type: string | null }
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Device unlinked from client
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: Unlink device from client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceId]
+              properties:
+                deviceId: { type: string }
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Device unlinked from client
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ====== DEVICES ======
+  /devices:
+    get:
+      summary: List devices (supports filters)
+      parameters:
+        - in: query
+          name: organizationId
+          schema: { type: string }
+          description: Filter devices by organization ID
+        - in: query
+          name: teamId
+          schema: { type: string }
+          description: Filter devices by team ID
+        - in: query
+          name: clientId
+          schema: { type: string }
+          description: Filter devices by client ID
+        - in: query
+          name: type
+          schema: { type: string }
+          description: Filter devices by device type
+        - in: query
+          name: status
+          schema: { type: string, enum: [active, inactive, offline] }
+          description: Filter by device lifecycle status
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Case-insensitive search across device name and hardware identifier
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagedDevices" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /devices/{deviceId}:
+    parameters:
+      - in: path
+        name: deviceId
+        required: true
+        schema: { type: string }
+    get:
+      summary: Get device details
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Device" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      summary: Update device (partial)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeviceUpdate" }
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Device updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      summary: Delete device
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Device deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /devices/{deviceId}/measurements:
+    parameters:
+      - in: path
+        name: deviceId
+        required: true
+        schema: { type: string }
+        description: ID of the device
+    get:
+      summary: List measurements for a device
+      description: >
+        Retrieve time-series measurements for a specific device.
+        Supports filtering by measurement type and time range.
+      parameters:
+        - in: query
+          name: type
+          schema: { type: string }
+          description: Filter by measurement type (e.g., temperature, heart_rate)
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+          description: Start of the time range (inclusive)
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+          description: End of the time range (exclusive)
+        - in: query
+          name: limit
+          schema: { type: integer, default: 100 }
+          description: Maximum number of measurements to return
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+          description: Index of the first measurement to return
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of measurements for the device
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer }
+                  limit: { type: integer }
+                  offset: { type: integer }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Measurement" }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Request lacks valid authentication credentials
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Forbidden:
+      description: Authenticated user lacks required permissions for this action
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    NotFound:
+      description: Requested resource was not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    Conflict:
+      description: Request conflicts with the current state of the resource
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  schemas:
+    PagedResponse:
+      type: object
+      properties:
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+
+    PagedOrganizations:
+      allOf:
+        - $ref: "#/components/schemas/PagedResponse"
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Organization" }
+
+    PagedTeams:
+      allOf:
+        - $ref: "#/components/schemas/PagedResponse"
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Team" }
+
+    PagedClients:
+      allOf:
+        - $ref: "#/components/schemas/PagedResponse"
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Client" }
+
+    PagedDevices:
+      allOf:
+        - $ref: "#/components/schemas/PagedResponse"
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Device" }
+    PagedAppUsers:
+      allOf:
+        - $ref: "#/components/schemas/PagedResponse"
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/AppUser" }
+
+    # ====== CORE SCHEMAS ======
+    Organization:
+      type: object
+      properties:
+        id: { type: string }
+        domain: { type: string }
+        name: { type: string }
+        logoUrl: { type: string }
+    OrganizationCreate:
+      type: object
+      required: [domain, name]
+      properties:
+        domain: { type: string }
+        name: { type: string }
+        logoUrl: { type: string }
+    OrganizationUpdate:
+      type: object
+      properties:
+        domain: { type: string }
+        name: { type: string }
+        logoUrl: { type: string }
+
+    Team:
+      type: object
+      properties:
+        id: { type: string }
+        organizationId: { type: string }
+        name: { type: string }
+        color: { type: string }
+        isArchived: { type: boolean }
+    TeamUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        color: { type: string }
+        isArchived: { type: boolean }
+
+    AppUser:
+      type: object
+      properties:
+        id: { type: string }
+        identityId: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string }
+    AppUserUpdate:
+      type: object
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string }
+    AppUserWithOrg:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/AppUser"
+        - type: object
+          properties:
+            organization:
+              type: object
+              properties:
+                id: { type: string }
+                name: { type: string }
+                role: { type: string }
+    AppUserMembership:
+      type: object
+      properties:
+        user: { $ref: "#/components/schemas/AppUser" }
+        role: { type: string }
+        memberSince: { type: string, format: date-time }
+        memberUntil: { type: string, format: date-time }
+    OrganizationMembershipUpdate:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string }
+        role: { type: string }
+        memberSince: { type: string, format: date-time }
+        memberUntil: { type: string, format: date-time }
+    TeamMembershipUpdate:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string }
+        role: { type: string }
+        memberSince: { type: string, format: date-time }
+        memberUntil: { type: string, format: date-time }
+    TeamBulkCreateItem:
+      type: object
+      required: [name, organizationId]
+      properties:
+        name: { type: string }
+        organizationId: { type: string }
+        color: { type: string }
+        isArchived: { type: boolean }
+    TeamBulkCreateRequest:
+      type: object
+      required: [teams]
+      properties:
+        teams:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/TeamBulkCreateItem" }
+    UserBulkCreateItem:
+      type: object
+      required: [email, firstName, lastName]
+      properties:
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string }
+        role: { type: string }
+        organizationId: { type: string }
+    UserBulkCreateRequest:
+      type: object
+      required: [users]
+      properties:
+        users:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/UserBulkCreateItem" }
+    ClientBulkCreateItem:
+      type: object
+      required: [firstName, lastName]
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        dateOfBirth: { type: string, format: date }
+        email: { type: string }
+        phone: { type: string }
+        address: { type: string }
+        externalId: { type: string }
+        teamId: { type: string }
+    ClientBulkCreateRequest:
+      type: object
+      required: [clients]
+      properties:
+        clients:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/ClientBulkCreateItem" }
+    BulkOperationResult:
+      type: object
+      properties:
+        jobId: { type: string }
+        created: { type: integer }
+        skipped: { type: integer }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              index: { type: integer }
+              code: { type: string }
+              message: { type: string }
+
+    Client:
+      type: object
+      properties:
+        id: { type: string }
+        teamId: { type: string }
+        gender: { type: string, enum: ["male", "female", "other"] }
+        firstName: { type: string }
+        lastName: { type: string }
+        archivedOn: { type: string, format: date-time }
+        archivedBy: { type: string }
+    ClientCreate:
+      type: object
+      required: [gender, firstName, lastName]
+      properties:
+        teamId: { type: string }
+        gender: { type: string, enum: ["male", "female", "other"] }
+        firstName: { type: string }
+        lastName: { type: string }
+    ClientUpdate:
+      type: object
+      properties:
+        id: { type: string }
+        teamId: { type: string }
+        gender: { type: string, enum: ["male", "female", "other"] }
+        firstName: { type: string }
+        lastName: { type: string }
+
+    Device:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string }
+        clientId: { type: string }
+        name: { type: string }
+        status:
+          type: object
+          properties:
+            lastSeen: { type: string, format: date-time }
+            batteryLevel: { type: number }
+            rssi: { type: integer }
+    DeviceUpdate:
+      type: object
+      properties:
+        type: { type: string }
+        clientId: { type: string }
+        name: { type: string }
+
+    Measurement:
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        deviceId: { type: string }
+        type: { type: string }
+        values:
+          type: object
+          additionalProperties:
+            type: number
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details:
+          type: object
+          additionalProperties: true

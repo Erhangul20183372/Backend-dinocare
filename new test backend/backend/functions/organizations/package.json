@@ -1,0 +1,33 @@
+{
+  "name": "@functions/organizations",
+  "version": "0.1.0",
+  "private": false,
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "dev": "tsx watch src/entrypoints/local.ts",
+    "build": "tsc -b",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc -b",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@codegenie/serverless-express": "^4.17.0",
+    "@shared/ts": "file:./shared-ts.tgz",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "morgan": "^1.10.1",
+    "pg": "^8.16.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.10",
+    "@types/pg": "^8.15.5",
+    "rimraf": "^6.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.5.0"
+  }
+}

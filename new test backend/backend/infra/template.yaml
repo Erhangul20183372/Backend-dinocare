@@ -1,0 +1,224 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Local/dev SAM setup for backend functions
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    MemorySize: 128
+    Timeout: 10
+    Architectures: [x86_64]
+    Environment:
+      Variables:
+        NODE_OPTIONS: --enable-source-maps
+
+Resources:
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: dev
+      Auth:
+        DefaultAuthorizer: AppAuthorizer
+        Authorizers:
+          AppAuthorizer:
+            AuthorizerPayloadFormatVersion: "2.0"
+            EnableSimpleResponses: true
+            FunctionArn: !GetAtt AuthorizerFunction.Arn
+            Identity:
+              Headers:
+                - Authorization
+      CorsConfiguration:
+        AllowMethods: ["*"]
+        AllowOrigins: ["*"]
+        AllowHeaders: ["*"]
+
+  AuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/auth
+      Handler: dist/entrypoints/lambda.handler
+      Events:
+        AnyAuthRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /api/auth/{proxy+}
+            Method: ANY
+            Auth:
+              Authorizer: NONE
+      Environment:
+        Variables:
+          NODE_ENV:
+          PORT:
+          JWT_ACCESS_SECRET:
+          JWT_REFRESH_SECRET:
+          JWT_ACCESS_EXPIRATION:
+          JWT_REFRESH_EXPIRATION:
+          PG_HOST:
+          PG_PORT:
+          PG_USER:
+          PG_PASSWORD:
+          PG_DATABASE:
+          SALT_ROUNDS:
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/entrypoints/lambda.ts
+        Minify: true
+        Sourcemap: true
+        Target: "ES2022"
+        External:
+          - esbuild
+
+  UsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/users
+      Handler: dist/entrypoints/lambda.handler
+      Events:
+        UsersBaseRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /api/users
+            Method: ANY
+        AnyUsersRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /api/users/{proxy+}
+            Method: ANY
+      Environment:
+        Variables:
+          NODE_ENV:
+          PORT:
+          PG_HOST:
+          PG_PORT:
+          PG_USER:
+          PG_PASSWORD:
+          PG_DATABASE:
+          ALLOW_DEV_IMPERSONATION:
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/entrypoints/lambda.ts
+        Minify: true
+        Sourcemap: true
+        Target: "ES2022"
+        External:
+          - esbuild
+
+  AlertsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/alerts
+      Handler: dist/entrypoints/lambda.handler
+      Events:
+        AlertsBaseRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /api/alerts
+            Method: ANY
+        AnyAlertsRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /api/alerts/{proxy+}
+            Method: ANY
+      Environment:
+        Variables:
+          NODE_ENV:
+          PORT:
+          ALLOW_DEV_IMPERSONATION:
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/entrypoints/lambda.ts
+        Minify: true
+        Sourcemap: true
+        Target: "ES2022"
+        External:
+          - esbuild
+
+  OrganizationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/organizations
+      Handler: dist/entrypoints/lambda.handler
+      Events:
+        OrgsBaseRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /api/organizations
+            Method: ANY
+        AnyOrgsRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /api/organizations/{proxy+}
+            Method: ANY
+      Environment:
+        Variables:
+          NODE_ENV:
+          PORT:
+          PG_HOST:
+          PG_PORT:
+          PG_USER:
+          PG_PASSWORD:
+          PG_DATABASE:
+          ALLOW_DEV_IMPERSONATION:
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/entrypoints/lambda.ts
+        Minify: true
+        Sourcemap: true
+        Target: "ES2022"
+        External:
+          - esbuild
+
+  AuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/authorizer
+      Handler: dist/lambda.handler
+      Environment:
+        Variables:
+          NODE_ENV:
+          JWT_ACCESS_SECRET:
+          ALLOW_DEV_IMPERSONATION:
+          DEV_IMPERSONATE_HEADER:
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambda.ts
+        Minify: true
+        Sourcemap: true
+        Target: "ES2022"
+        External:
+          - esbuild
+
+Outputs:
+  LocalHttpApiUrl:
+    Description: URL for local HttpApi when running `sam local start-api`
+    Value: http://127.0.0.1:3000
+  DeployedHttpApiUrl:
+    Description: Deployed HttpApi endpoint
+    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/dev"
+  AuthFunctionArn:
+    Value: !GetAtt AuthFunction.Arn
+  UsersFunctionArn:
+    Value: !GetAtt UsersFunction.Arn
+  AlertsFunctionArn:
+    Value: !GetAtt AlertsFunction.Arn
+  OrganizationsFunctionArn:
+    Value: !GetAtt OrganizationsFunction.Arn
+  AuthorizerFunctionArn:
+    Value: !GetAtt AuthorizerFunction.Arn

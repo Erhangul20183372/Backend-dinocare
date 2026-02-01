@@ -1,0 +1,9 @@
+variable "db_host" {}
+variable "db_port" {}
+variable "db_name" {}
+variable "db_admin_user" {}
+variable "db_admin_pass" {}
+variable "migrator_user" {}
+variable "migrator_password" {}
+variable "backend_user" {}
+variable "backend_password" {}

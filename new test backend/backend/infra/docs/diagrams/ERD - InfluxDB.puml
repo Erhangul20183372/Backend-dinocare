@@ -1,0 +1,206 @@
+@startuml ERD_InfluxDB
+
+' === Buckets ===
+package "Bucket: iot_raw (Retention: unlimited)" {
+  entity "bedsensor" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    + fw_version : string [tag]
+    --
+    + pressure_left : float [field]
+    + pressure_center: float [field]
+    + pressure_right : float [field]
+  }
+
+  entity "blood_pressure" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    + fw_version : string [tag]
+    --
+    + systolic : int [field]
+    + diastolic : int [field]
+    + pulse : int [field]
+  }
+
+  entity "scale" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    + fw_version : string [tag]
+    --
+    + weight : float [field]
+    + bmi : float [field]
+    + bodyfat : float [field]
+  }
+
+  entity "device_stats" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    + mesh_node : string [tag]
+    + mesh_role : string [tag]
+    + fw_version : string [tag]
+    --
+    + rssi : int [field]
+    + battery_level : float [field]
+    + mesh_hops : int [field]
+  }
+
+  entity "device_perf" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    + fw_version : string [tag]
+    --
+    + cpu_usage : float [field]
+    + ram_usage : float [field]
+    + device_temp : float [field]
+  }
+}
+
+package "Bucket: iot_agg (Retention: unlimited)" {
+  entity "scale_hourly" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    --
+    + avg_weight : float [field]
+    + p95_weight : float [field]
+    + min_weight : float [field]
+    + max_weight : float [field]
+  }
+
+  entity "bedsensor_hourly" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    --
+    + avg_pressure_left : float [field]
+    + avg_pressure_center : float [field]
+    + avg_pressure_right : float [field]
+    + p95_pressure_center : float [field]
+  }
+
+  entity "blood_pressure_hourly" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    --
+    + avg_systolic : float [field]
+    + avg_diastolic : float [field]
+    + avg_pulse : float [field]
+  }
+
+  entity "device_status_hourly" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    --
+    + avg_rssi : float [field]
+    + avg_battery_level : float [field]
+    + avg_mesh_hops : float [field]
+    + min_battery_level : float [field]
+  }
+
+  entity "device_perf_hourly" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    --
+    + avg_cpu_usage : float [field]
+    + avg_ram_usage : float [field]
+    + avg_device_temp : float [field]
+    + max_device_temp : float [field]
+  }
+
+  entity "scale_daily" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    --
+    + avg_weight : float [field]
+    + p95_weight : float [field]
+    + min_weight : float [field]
+    + max_weight : float [field]
+  }
+
+  entity "bedsensor_daily" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    --
+    + avg_pressure_left : float [field]
+    + avg_pressure_center : float [field]
+    + avg_pressure_right : float [field]
+    + p95_pressure_center : float [field]
+  }
+
+  entity "blood_pressure_daily" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    + site : string [tag]
+    --
+    + avg_systolic : float [field]
+    + avg_diastolic : float [field]
+    + avg_pulse : float [field]
+  }
+
+  entity "device_status_daily" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    --
+    + avg_rssi : float [field]
+    + avg_battery_level : float [field]
+    + avg_mesh_hops : float [field]
+    + min_battery_level : float [field]
+  }
+
+  entity "device_perf_daily" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    --
+    + avg_cpu_usage : float [field]
+    + avg_ram_usage : float [field]
+    + avg_device_temp : float [field]
+    + max_device_temp : float [field]
+  }
+}
+
+package "Bucket: iot_ops (Retention: 180d)" {
+  entity "device_events" {
+    + time : timestamp
+    --
+    + device_id : string [tag]
+    + event_type : string [tag]
+    --
+    + message : string [field]
+    + code : int [field]
+  }
+
+  entity "network_events" {
+    + time : timestamp
+    --
+    + mesh_node : string [tag]
+    + severity : string [tag]
+    --
+    + message : string [field]
+    + dropped_packets : int [field]
+  }
+}
+
+
+legend top right
+    == Legend ==
+    Bucket = Logical grouping of measurements 
+    Measurement (entity) = Table-like structure
+    Tag = Indexed metadata (string)
+    Field = Actual data value (various types)
+    Time = Timestamp of the data point
+endlegend
+
+@enduml

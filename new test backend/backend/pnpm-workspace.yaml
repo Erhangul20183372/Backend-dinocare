@@ -1,0 +1,7 @@
+packages:
+  - infra
+  - packages/*
+  - functions/*
+
+ignoredBuiltDependencies:
+  - esbuild

@@ -1,0 +1,71 @@
+volumes:
+  pg_admin_data:
+  postgres_data:
+
+services:
+  postgres:
+    build:
+      context: ../db
+    image: dinocare-postgres:16
+    container_name: dinocare-postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+      start_period: 10s
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPERUSER_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_NAME}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../db/tests:/tests
+
+  dbmate:
+    image: amacneil/dbmate:latest
+    container_name: dinocare-dbmate
+    depends_on:
+      - postgres
+    volumes:
+      - ../db:/db
+    environment:
+      DATABASE_URL: ${POSTGRES_HOST}://${POSTGRES_MIGRATOR_USER}:${POSTGRES_MIGRATOR_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_NAME}?sslmode=disable
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: dinocare-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - 5050:80
+    depends_on:
+      - postgres
+    volumes:
+      - ./containers/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - pg_admin_data:/var/lib/pgadmin
+
+  terraform:
+    image: hashicorp/terraform:1.9
+    container_name: dinocare-terraform
+    working_dir: /workspace
+    volumes:
+      - ../iac:/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      TF_VAR_db_host: ${POSTGRES_HOST}
+      TF_VAR_db_port: ${POSTGRES_PORT}
+      TF_VAR_db_name: ${POSTGRES_NAME}
+      TF_VAR_db_admin_user: ${POSTGRES_SUPERUSER_USER}
+      TF_VAR_db_admin_pass: ${POSTGRES_SUPERUSER_PASSWORD}
+      TF_VAR_migrator_user: ${POSTGRES_MIGRATOR_USER}
+      TF_VAR_migrator_password: ${POSTGRES_MIGRATOR_PASSWORD}
+      TF_VAR_backend_user: ${POSTGRES_BACKEND_USER}
+      TF_VAR_backend_password: ${POSTGRES_BACKEND_PASSWORD}

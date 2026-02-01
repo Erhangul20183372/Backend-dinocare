@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "DinoCare Postgres",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "core",
+      "Username": "root",
+      "SSLMode": "disable"
+    }
+  }
+}

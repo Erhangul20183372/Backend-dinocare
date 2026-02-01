@@ -1,0 +1,34 @@
+@startuml C4 - System Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title C4 - System Context
+
+' People
+Person(healthgiver, "Healthcare Giver", "Provides healthcare services")
+Person(informergiver, "Informer Care Giver", "Supports and informs clients")
+Person(client, "Client", "Receives healthcare")
+
+' Core system
+System(system, "Our Platform", "Healthcare platform")
+
+' External systems
+System_Ext(sensors, "Home Sensors", "Installed at client homes to collect health data")
+System_Ext(push, "Push Notification Service", "Sends mobile push notifications")
+System_Ext(email, "AWS Email Service (SES)", "Sends transactional emails")
+System_Ext(storage, "AWS S3 Storage", "Stores Bitwarden authentication files")
+System_Ext(secrets, "Bitwarden", "Provides secrets and credentials securely")
+
+' Relationships
+Rel(healthgiver, system, "Uses")
+Rel(informergiver, system, "Uses part of")
+
+Rel(client, sensors, "Has installed at home")
+Rel(sensors, system, "Sends health data to")
+
+Rel(system, push, "Sends notifications through")
+Rel(system, email, "Sends emails via")
+Rel(system, storage, "Retrieves .env file on startup from")
+Rel(system, secrets, "Retrieves secrets from")
+
+SHOW_LEGEND()
+@enduml

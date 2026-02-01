@@ -1,0 +1,646 @@
+{
+  "auth.app_user_root_membership": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "auth.identity": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "self"
+      },
+      {
+        "role": "organization_member",
+        "scope": "self"
+      },
+      {
+        "role": "team_admin",
+        "scope": "self"
+      },
+      {
+        "role": "team_member",
+        "scope": "self"
+      },
+      {
+        "role": "client_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "self"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "self"
+      },
+      {
+        "role": "organization_member",
+        "scope": "self"
+      },
+      {
+        "role": "team_admin",
+        "scope": "self"
+      },
+      {
+        "role": "team_member",
+        "scope": "self"
+      },
+      {
+        "role": "client_member",
+        "scope": "self"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "auth.app_user": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "organization_member",
+        "scope": "self"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      },
+      {
+        "role": "team_member",
+        "scope": "self"
+      },
+      {
+        "role": "client_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "organization_member",
+        "scope": "self"
+      },
+      {
+        "role": "team_admin",
+        "scope": "self"
+      },
+      {
+        "role": "team_member",
+        "scope": "self"
+      },
+      {
+        "role": "client_member",
+        "scope": "self"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "organization.app_user_organization_membership": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "organization_member",
+        "scope": "self"
+      },
+      {
+        "role": "team_admin",
+        "scope": "self"
+      },
+      {
+        "role": "team_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "organization.organization": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "self"
+      },
+      {
+        "role": "organization_member",
+        "scope": "self"
+      },
+      {
+        "role": "team_admin",
+        "scope": "self"
+      },
+      {
+        "role": "team_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "self"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "team.app_user_team_membership": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      },
+      {
+        "role": "team_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "team.team": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "self"
+      },
+      {
+        "role": "team_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "self"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "client.app_user_client_membership": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "client_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "client.client": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      },
+      {
+        "role": "team_member",
+        "scope": "team"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      },
+      {
+        "role": "team_member",
+        "scope": "team"
+      },
+      {
+        "role": "client_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      },
+      {
+        "role": "team_member",
+        "scope": "team"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "device.client_device_assignment": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      },
+      {
+        "role": "team_member",
+        "scope": "team"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      },
+      {
+        "role": "team_member",
+        "scope": "team"
+      },
+      {
+        "role": "client_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      },
+      {
+        "role": "team_member",
+        "scope": "team"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "device.device": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "organization"
+      },
+      {
+        "role": "team_admin",
+        "scope": "team"
+      },
+      {
+        "role": "team_member",
+        "scope": "team"
+      },
+      {
+        "role": "client_member",
+        "scope": "self"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  },
+  "device.device_type": {
+    "create": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "read": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      },
+      {
+        "role": "app_member",
+        "scope": "global"
+      },
+      {
+        "role": "organization_admin",
+        "scope": "global"
+      },
+      {
+        "role": "team_admin",
+        "scope": "global"
+      },
+      {
+        "role": "team_member",
+        "scope": "global"
+      },
+      {
+        "role": "client_member",
+        "scope": "global"
+      }
+    ],
+    "update": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ],
+    "delete": [
+      {
+        "role": "app_admin",
+        "scope": "global"
+      }
+    ]
+  }
+}
